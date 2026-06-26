@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VidFetch — YouTube Downloader</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__logo">
+        <span class="sidebar__logo-icon"><i class="ti ti-brand-youtube"></i></span>
+        <div class="sidebar__logo-text">
+          <span class="sidebar__app-name">VidFetch</span>
+          <span class="sidebar__app-sub">YouTube Downloader</span>
+        </div>
+      </div>
+
+      <nav class="sidebar__nav">
+        <a class="nav-item active" href="#">
+          <i class="ti ti-download"></i><span>Download</span>
+        </a>
+      </nav>
+
+      <button class="sidebar__hamburger" id="hamburger" aria-label="Toggle menu">
+        <i class="ti ti-menu-2"></i>
+      </button>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <header class="topbar">
+        <span class="topbar__title"><i class="ti ti-download"></i> Download</span>
+        <div class="topbar__actions">
+          <button class="btn btn--ghost" id="pasteBtn"><i class="ti ti-clipboard"></i> <span class="topbar__btn-text">Paste URL</span></button>
+          <button class="btn btn--ghost"><i class="ti ti-adjustments-horizontal"></i> <span class="topbar__btn-text">Options</span></button>
+        </div>
+      </header>
+
+      <div class="main__content">
+        <!-- URL INPUT CARD -->
+        <div class="card url-card">
+          <span class="section-label">VIDEO URL</span>
+          <div class="url-card__row">
+            <input class="input" id="ytUrl" type="text"
+                   placeholder="Tempel link YouTube di sini…"
+                   value="" spellcheck="false" autocomplete="off">
+            <button class="btn btn--primary" id="fetchBtn"><i class="ti ti-search"></i> Fetch</button>
+            <button class="btn btn--ghost" id="clearBtn" style="display:none"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="url-card__msg" id="urlMsg"></div>
+        </div>
+
+        <!-- PREVIEW AREA (rendered by JS after fetch) -->
+        <div id="previewArea"></div>
+
+        <!-- HISTORY SECTION -->
+        <div class="history" id="historySection">
+          <div class="history__head">
+            <span class="section-label"><i class="ti ti-history"></i> HISTORY</span>
+            <button class="btn btn--ghost" id="clearHistoryBtn" title="Hapus semua history">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+          <div class="history__list" id="historyList">
+            <!-- populated by JS -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts (classic, no modules — works on file://) -->
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/download-view.js"></script>
+  <script src="js/history-view.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- Download overlay (shown during in-page download) -->
+  <div class="dl-overlay" id="downloadOverlay">
+    <div class="dl-overlay__box">
+      <i class="ti ti-download dl-overlay__icon"></i>
+      <div class="dl-overlay__msg" id="dlOverlayMsg">Memulai download…</div>
+      <div class="dl-overlay__bar"><div class="dl-overlay__fill" id="dlOverlayBar"></div></div>
+      <div class="dl-overlay__detail" id="dlOverlayDetail"></div>
+      <button class="btn btn--ghost dl-overlay__cancel" id="dlOverlayCancel">Batalkan</button>
+    </div>
+  </div>
+</body>
+</html>

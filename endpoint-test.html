@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Endpoint Tester - YouTube Downloader</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 24px;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin-bottom: 4px; }
+  .subtitle { color: #94a3b8; margin-bottom: 24px; font-size: 0.9rem; }
+  .card {
+    background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+    padding: 20px; margin-bottom: 20px;
+  }
+  label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; }
+  input[type=text] {
+    width: 100%; padding: 12px 14px; background: #0f172a; border: 1px solid #475569;
+    border-radius: 8px; color: #e2e8f0; font-size: 0.95rem; font-family: monospace;
+  }
+  input[type=text]:focus { outline: none; border-color: #3b82f6; }
+  .btn-row { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  button {
+    flex: 1; min-width: 180px; padding: 12px 18px; border: none; border-radius: 8px;
+    font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-p1 { background: #3b82f6; color: white; }
+  .btn-p2 { background: #8b5cf6; color: white; }
+  .btn-both { background: #10b981; color: white; }
+  button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.1); }
+  button:disabled { opacity: 0.5; cursor: wait; }
+  .result {
+    background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+    padding: 14px; margin-top: 14px; font-family: 'Consolas', monospace;
+    font-size: 0.82rem; white-space: pre-wrap; word-break: break-all; max-height: 400px;
+    overflow: auto; line-height: 1.5;
+  }
+  .status-line { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; font-size: 0.8rem; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 12px; font-weight: 600;
+  }
+  .badge.ok { background: #064e3b; color: #6ee7b7; }
+  .badge.fail { background: #7f1d1d; color: #fca5a5; }
+  .badge.warn { background: #78350f; color: #fcd34d; }
+  .badge.info { background: #1e3a8a; color: #93c5fd; }
+  .section-title { font-size: 0.95rem; margin: 18px 0 4px; font-weight: 600; }
+  .hint { color: #64748b; font-size: 0.78rem; margin-top: 8px; }
+  .cors-note {
+    background: #1e1b4b; border-left: 3px solid #6366f1; padding: 10px 14px;
+    border-radius: 6px; font-size: 0.8rem; margin-top: 10px; color: #c7d2fe;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔌 Endpoint Tester</h1>
+  <p class="subtitle">Test CORS & response 2 provider YouTube downloader dari browsermu langsung</p>
+
+  <div class="card">
+    <label for="url">🔗 YouTube URL</label>
+    <input type="text" id="url" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ" spellcheck="false">
+    <div class="btn-row">
+      <button class="btn-p1" onclick="testProvider(1)">▶ Test Provider 1 (faa)</button>
+      <button class="btn-p2" onclick="testProvider(2)">▶ Test Provider 2 (synoxo)</button>
+      <button class="btn-both" onclick="testProvider('both')">⚡ Test Keduanya</button>
+    </div>
+    <p class="hint">Tip: gunakan URL video pendek buat tes cepat. dQw4w9WgXcQ = video pendek default.</p>
+  </div>
+
+  <div id="output"></div>
+
+  <div class="cors-note">
+    <strong>📚 Cara baca hasil:</strong><br>
+    • <strong>Status 200 + ada response</strong> = ✅ endpoint jalan & CORS-nya kebuka (browser bisa akses langsung)<br>
+    • <strong>"Failed to fetch" / TypeError</strong> = ❌ CORS ditutup ATAU server down → butuh proxy server<br>
+    • <strong>Status 5xx / 4xx</strong> = endpoint bermasalah di sisi server<br>
+    • <strong>Timeout</strong> = server lambat/tidak respon
+  </div>
+</div>
+
+<script>
+const ENDPOINTS = {
+  1: { name: 'Provider 1 (api-faa.my.id)', url: yt => `https://api-faa.my.id/faa/ytmp4?url=${encodeURIComponent(yt)}` },
+  2: { name: 'Provider 2 (api.synoxcloud.xyz) — all-platform', url: yt => `https://api.synoxcloud.xyz/download/all-in-one?url=${encodeURIComponent(yt)}` }
+};
+
+async function testProvider(id) {
+  const yt = document.getElementById('url').value.trim();
+  if (!yt) { alert('Isi URL YouTube dulu'); return; }
+
+  const ids = id === 'both' ? [1, 2] : [id];
+  const buttons = document.querySelectorAll('button');
+  buttons.forEach(b => b.disabled = true);
+
+  for (const i of ids) {
+    const ep = ENDPOINTS[i];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<div class="section-title">${ep.name}</div><div class="result" id="r${i}">⏳ Mengetes...</div>`;
+    document.getElementById('output').prepend(card);
+
+    const start = performance.now();
+    try {
+      const res = await fetch(ep.url(yt), { method: 'GET', signal: AbortSignal.timeout(20000) });
+      const elapsed = ((performance.now() - start) / 1000).toFixed(2);
+      const text = await res.text();
+      const corsHeader = res.headers.get('access-control-allow-origin');
+      let jsonDisplay = text;
+      try { jsonDisplay = JSON.stringify(JSON.parse(text), null, 2); } catch(e) {}
+
+      const corsBadge = corsHeader
+        ? `<span class="badge ok">CORS: ${corsHeader}</span>`
+        : `<span class="badge fail">CORS: TIDAK ADA</span>`;
+      const statusBadge = res.ok
+        ? `<span class="badge ok">HTTP ${res.status}</span>`
+        : `<span class="badge fail">HTTP ${res.status}</span>`;
+
+      document.getElementById(`r${i}`).innerHTML =
+        `<div class="status-line">${statusBadge}${corsBadge}<span class="badge info">⏱ ${elapsed}s</span><span class="badge info">${text.length} bytes</span></div>` +
+        jsonDisplay;
+    } catch (err) {
+      const elapsed = ((performance.now() - start) / 1000).toFixed(2);
+      let diagnosis = '';
+      if (err.name === 'TypeError' || err.message.includes('Failed to fetch')) {
+        diagnosis = '\n\n🔍 DIAGNOSIS: Kemungkinan CORS DITUTUP atau server tidak reachable dari browser. ' +
+                    'Kalau server benar-benar down, pesannya beda. Tes ulang di tab baru buat mastiin.';
+      } else if (err.name === 'TimeoutError') {
+        diagnosis = '\n\n🔍 DIAGNOSIS: TIMEOUT (>20s). Server terlalu lambat atau tidak respon.';
+      }
+      document.getElementById(`r${i}`).innerHTML =
+        `<div class="status-line"><span class="badge fail">ERROR</span><span class="badge warn">⏱ ${elapsed}s</span></div>` +
+        `❌ ${err.name}: ${err.message}${diagnosis}`;
+    }
+  }
+  buttons.forEach(b => b.disabled = false);
+}
+</script>
+</body>
+</html>

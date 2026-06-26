@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>CORS Deep Check - synoxcloud</title>
+<style>
+  body { font-family: monospace; background: #0f172a; color: #e2e8f0; padding: 24px; max-width: 800px; margin: 0 auto; }
+  h1 { font-size: 1.3rem; }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin: 12px 0; }
+  .ok { color: #6ee7b7; } .fail { color: #fca5a5; } .warn { color: #fcd34d; }
+  pre { background: #0f172a; padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; }
+  button { background: #8b5cf6; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  button:hover { filter: brightness(1.15); }
+  .hint { color: #64748b; font-size: 0.8rem; }
+</style>
+</head>
+<body>
+<h1>🔬 CORS Deep Check — synoxcloud endpoint</h1>
+<p class="hint">Test ini cuma ngecek CORS di endpoint <code>/download/youtube</code>. Buka Console browser (F12) untuk lihat detail lengkap.</p>
+
+<div class="card">
+  <button onclick="runCheck()">▶ Mulai CORS Check</button>
+  <div id="out" style="margin-top: 12px;"></div>
+</div>
+
+<script>
+async function runCheck() {
+  const out = document.getElementById('out');
+  const url = 'https://api.synoxcloud.xyz/download/youtube?url=https%3A%2F%2Fyoutu.be%2FdQw4w9WgXcQ';
+  out.innerHTML = '<p>⏳ Mengetes CORS di endpoint <code>/download/youtube</code>...</p>';
+
+  // Test 1: Fetch langsung (ini yang bakal dipakai web production)
+  out.innerHTML += '<p>━'.repeat(30) + '</p>';
+  out.innerHTML += '<p><b>TEST 1: Fetch langsung (mode: cors)</b></p>';
+  const start = performance.now();
+  try {
+    const res = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(25000) });
+    const elapsed = ((performance.now() - start) / 1000).toFixed(2);
+    const cors = res.headers.get('access-control-allow-origin');
+    const allHeaders = [];
+    res.headers.forEach((v, k) => allHeaders.push(`${k}: ${v}`));
+
+    out.innerHTML += `<p class="${res.ok ? 'ok' : 'fail'}">HTTP ${res.status} • ${elapsed}s</p>`;
+    out.innerHTML += `<p>CORS header <code>access-control-allow-origin</code>: <b class="${cors ? 'ok' : 'fail'}">${cors || 'TIDAK ADA ❌'}</b></p>`;
+    out.innerHTML += '<p><b>Semua response headers:</b></p><pre>' + allHeaders.join('\n') + '</pre>';
+
+    if (cors) {
+      out.innerHTML += '<p class="ok">✅ KESIMPULAN: CORS OPEN — bisa langsung dipakai di web tanpa proxy!</p>';
+    } else {
+      out.innerHTML += '<p class="fail">⚠️ KESIMPULAN: CORS TIDAK ADA — browser web production akan gagal fetch. Butuh proxy serverless.</p>';
+    }
+  } catch (err) {
+    const elapsed = ((performance.now() - start) / 1000).toFixed(2);
+    out.innerHTML += `<p class="fail">❌ ${err.name}: ${err.message} (${elapsed}s)</p>`;
+    if (err.message.includes('Failed to fetch') || err.name === 'TypeError') {
+      out.innerHTML += '<p class="fail">⚠️ CORS ditutup atau tidak terjangkau dari browser. Butuh proxy.</p>';
+    }
+  }
+
+  // Test 2: OPTIONS preflight
+  out.innerHTML += '<p>' + '━'.repeat(60) + '</p>';
+  out.innerHTML += '<p><b>TEST 2: OPTIONS preflight (CORS preflight check)</b></p>';
+  try {
+    const res = await fetch(url, {
+      method: 'OPTIONS',
+      headers: { 'Access-Control-Request-Method': 'GET' },
+      signal: AbortSignal.timeout(15000)
+    });
+    const cors = res.headers.get('access-control-allow-origin');
+    out.innerHTML += `<p class="ok">OPTIONS: HTTP ${res.status}</p>`;
+    out.innerHTML += `<p>CORS: <b class="${cors ? 'ok' : 'fail'}">${cors || 'TIDAK ADA ❌'}</b></p>`;
+  } catch (err) {
+    out.innerHTML += `<p class="fail">❌ OPTIONS failed: ${err.message}</p>`;
+  }
+}
+</script>
+</body>
+</html>
