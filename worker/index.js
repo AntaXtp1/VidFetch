@@ -8,9 +8,7 @@
  */
 
 const ALLOWED_ORIGINS = [
-  // Ganti dengan domain Cloudflare Pages kamu setelah deploy
-  // Contoh: 'https://vidfetch.pages.dev'
-  // Untuk development, bisa tambah 'null' (file://)
+  'https://vidfetch.pages.dev',
   'null', // file:// local testing
 ];
 
