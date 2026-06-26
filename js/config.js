@@ -12,13 +12,12 @@ const VidFetchConfig = {
   youtubeUrlPattern:
     /^(https?:\/\/)?(www\.|m\.)?(youtube\.com\/(watch|shorts|embed)|youtu\.be\/).+/i,
 
-  // ⚠️ Ganti dengan URL Worker kamu setelah deploy ke Cloudflare
-  // Contoh: 'https://vidfetch-proxy.namaakun.workers.dev'
-  workerUrl: 'https://vidfetch-proxy.namaakun.workers.dev',
+  // Cloudflare Worker proxy URL
+  workerUrl: 'https://autumn-recipe-e193.antarahimmuhammad.workers.dev',
 
   // Proxy URL builder: kirim googlevideo URL ke Worker
   proxyDownloadUrl: (directUrl) =>
-    `https://vidfetch-proxy.namaakun.workers.dev/dl?url=${encodeURIComponent(directUrl)}`,
+    `https://autumn-recipe-e193.antarahimmuhammad.workers.dev/dl?url=${encodeURIComponent(directUrl)}`,
 
   // History auto-cleanup after 7 days
   historyMaxAgeMs: 7 * 24 * 60 * 60 * 1000,
