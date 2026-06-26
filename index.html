@@ -48,14 +48,15 @@
         </button>
       </div>
 
-      <button class="sidebar__hamburger" id="hamburger" aria-label="Toggle menu">
-        <i class="ti ti-menu-2"></i>
-      </button>
     </aside>
 
     <!-- MAIN -->
     <main class="main">
       <header class="topbar">
+        <!-- Hamburger di topbar (mobile only) -->
+        <button class="sidebar__hamburger" id="hamburger" aria-label="Toggle menu">
+          <i class="ti ti-menu-2"></i>
+        </button>
         <span class="topbar__title"><i class="ti ti-download"></i> Download</span>
         <div class="topbar__actions">
           <button class="btn btn--ghost" id="pasteBtn"><i class="ti ti-clipboard"></i> <span class="topbar__btn-text">Paste URL</span></button>
@@ -125,10 +126,18 @@
   <!-- DOWNLOAD OVERLAY -->
   <div class="dl-overlay" id="downloadOverlay">
     <div class="dl-overlay__box">
-      <i class="ti ti-download dl-overlay__icon"></i>
+      <i class="ti ti-download dl-overlay__icon" id="dlOverlayIcon"></i>
       <div class="dl-overlay__msg" id="dlOverlayMsg">Memulai download…</div>
-      <div class="dl-overlay__bar"><div class="dl-overlay__fill" id="dlOverlayBar"></div></div>
       <div class="dl-overlay__detail" id="dlOverlayDetail"></div>
+      <div class="dl-overlay__bar"><div class="dl-overlay__fill" id="dlOverlayBar"></div></div>
+      <div class="dl-overlay__stats">
+        <span id="dlOverlayPct"></span>
+        <span id="dlOverlaySize"></span>
+      </div>
+      <div class="dl-overlay__stats dl-overlay__stats--sub">
+        <span id="dlOverlaySpeed"></span>
+        <span id="dlOverlayEta"></span>
+      </div>
       <button class="btn btn--ghost dl-overlay__cancel" id="dlOverlayCancel">Batalkan</button>
     </div>
   </div>

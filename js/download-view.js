@@ -1,9 +1,8 @@
 // ========================================================================
-// VidFetch — Download View (v4: Worker proxy + real progress bar)
+// VidFetch — Download View (v5: enhanced overlay speed + ETA)
 // ========================================================================
 const DownloadView = {
   state: { video: null, selectedUrl: null, selectedLabel: null },
-
   targetResolutions: ['1080p', '720p', '480p', '360p'],
 
   renderPreview(video) {
@@ -51,14 +50,12 @@ const DownloadView = {
             </div>
           </div>
         </div>
-
         <div class="preview-card__body">
           <span class="section-label">PILIH FORMAT</span>
           <div class="format-grid" id="formatGrid">
             ${allFormats.map((f) => this._fmtCell(f)).join('')}
           </div>
         </div>
-
         <div class="preview-card__actions">
           <button class="btn btn--download" id="dlBtn">
             <i class="ti ti-download"></i>
@@ -94,79 +91,131 @@ const DownloadView = {
     }
 
     document.getElementById('dlBtn').addEventListener('click', () => this.startDownload());
-
     HistoryView.addItem(video);
   },
 
-  /** Download via Worker proxy — real fetch+blob+progress */
+  /** Download via Worker proxy dengan real progress + speed + ETA */
   async startDownload() {
     const directUrl = this.state.selectedUrl;
-    const label = this.state.selectedLabel || 'video';
+    const label     = this.state.selectedLabel || 'video';
     if (!directUrl) return;
 
-    // Build proxy URL through our Worker
-    const proxyUrl = VidFetchConfig.proxyDownloadUrl(directUrl);
+    const proxyUrl     = VidFetchConfig.proxyDownloadUrl(directUrl);
+    const overlay      = document.getElementById('downloadOverlay');
+    const overlayMsg   = document.getElementById('dlOverlayMsg');
+    const overlayBar   = document.getElementById('dlOverlayBar');
+    const overlayPct   = document.getElementById('dlOverlayPct');
+    const overlaySize  = document.getElementById('dlOverlaySize');
+    const overlaySpeed = document.getElementById('dlOverlaySpeed');
+    const overlayEta   = document.getElementById('dlOverlayEta');
+    const overlayDetail= document.getElementById('dlOverlayDetail');
+    const overlayCancel= document.getElementById('dlOverlayCancel');
 
-    const overlay = document.getElementById('downloadOverlay');
-    const overlayMsg = document.getElementById('dlOverlayMsg');
-    const overlayBar = document.getElementById('dlOverlayBar');
-    const overlayDetail = document.getElementById('dlOverlayDetail');
-    const overlayCancel = document.getElementById('dlOverlayCancel');
-
+    // Reset overlay
     overlay.classList.add('active');
-    overlayMsg.textContent = 'Menghubungi server…';
-    overlayDetail.textContent = label;
     overlayBar.style.width = '0%';
     overlayBar.style.background = '#5a6070';
+    overlayMsg.textContent   = 'Menghubungi server…';
+    overlayDetail.textContent = label;
+    overlayPct.textContent   = '';
+    overlaySize.textContent  = '';
+    overlaySpeed.textContent = '';
+    overlayEta.textContent   = '';
 
-    let controller = new AbortController();
+    const controller = new AbortController();
+    overlayCancel.textContent = 'Batalkan';
     overlayCancel.onclick = () => {
       controller.abort();
       overlay.classList.remove('active');
     };
 
-    try {
-      const res = await fetch(proxyUrl, {
-        signal: controller.signal,
-      });
+    // Rolling speed tracking
+    const speedWindow = []; // [{ts, bytes}]
+    let lastUpdateTs = Date.now();
 
+    function updateStats(received, contentLength) {
+      const now = Date.now();
+
+      // Tambah ke window
+      speedWindow.push({ ts: now, bytes: received });
+      // Buang data > 3 detik lalu
+      const cutoff = now - 3000;
+      while (speedWindow.length > 1 && speedWindow[0].ts < cutoff) speedWindow.shift();
+
+      // Hitung speed dari rolling window
+      let speedBps = 0;
+      if (speedWindow.length >= 2) {
+        const oldest  = speedWindow[0];
+        const newest  = speedWindow[speedWindow.length - 1];
+        const elapsed = (newest.ts - oldest.ts) / 1000;
+        const bytes   = newest.bytes - oldest.bytes;
+        speedBps = elapsed > 0 ? bytes / elapsed : 0;
+      }
+
+      // Update setiap 500ms biar gak flicker
+      if (now - lastUpdateTs < 500) return;
+      lastUpdateTs = now;
+
+      const speedMB = speedBps / 1024 / 1024;
+      const recvMB  = received / 1024 / 1024;
+
+      if (contentLength > 0) {
+        const totalMB = contentLength / 1024 / 1024;
+        const pct     = Math.round((received / contentLength) * 100);
+        overlayBar.style.width   = pct + '%';
+        overlayPct.textContent   = pct + '%';
+        overlaySize.textContent  = `${recvMB.toFixed(1)} MB / ${totalMB.toFixed(1)} MB`;
+        overlayMsg.textContent   = 'Mengunduh…';
+
+        if (speedBps > 0) {
+          overlaySpeed.textContent = `${speedMB.toFixed(1)} MB/s`;
+          const etaSec = (contentLength - received) / speedBps;
+          overlayEta.textContent = etaSec > 0 ? `Sisa ~${_fmtEta(etaSec)}` : '';
+        }
+      } else {
+        // Tanpa content-length: tampilkan MB downloaded + speed, ETA gak bisa dihitung
+        overlayMsg.textContent  = 'Mengunduh…';
+        overlaySize.textContent = `${recvMB.toFixed(1)} MB`;
+        overlayPct.textContent  = '';
+        if (speedBps > 0) {
+          overlaySpeed.textContent = `${speedMB.toFixed(1)} MB/s`;
+        }
+        overlayEta.textContent = '';
+        // Fake progress bar tanpa total
+        const fakeP = Math.min(90, (received / (50 * 1024 * 1024)) * 100);
+        overlayBar.style.width = fakeP + '%';
+      }
+    }
+
+    function _fmtEta(sec) {
+      if (sec < 60) return `${Math.ceil(sec)}s`;
+      const m = Math.floor(sec / 60), s = Math.ceil(sec % 60);
+      return `${m}m ${s}s`;
+    }
+
+    try {
+      const res = await fetch(proxyUrl, { signal: controller.signal });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
       const contentLength = parseInt(res.headers.get('content-length') || '0', 10);
-      const reader = res.body.getReader();
-      const chunks = [];
-      let received = 0;
-
-      overlayMsg.textContent = 'Mengunduh…';
+      const reader  = res.body.getReader();
+      const chunks  = [];
+      let received  = 0;
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         chunks.push(value);
         received += value.length;
-
-        if (contentLength > 0) {
-          const pct = Math.round((received / contentLength) * 100);
-          overlayBar.style.width = pct + '%';
-          overlayMsg.textContent = `Mengunduh… ${pct}%`;
-          overlayDetail.textContent = `${(received / 1024 / 1024).toFixed(1)} / ${(contentLength / 1024 / 1024).toFixed(1)} MB`;
-        } else {
-          // No content-length, just show MB downloaded
-          const mb = (received / 1024 / 1024).toFixed(1);
-          overlayMsg.textContent = `Mengunduh… ${mb} MB`;
-          // Animate bar without knowing total
-          const fakeP = Math.min(95, (received / (5 * 1024 * 1024)) * 100);
-          overlayBar.style.width = fakeP + '%';
-        }
+        updateStats(received, contentLength);
       }
 
-      // Build blob → trigger save
-      const blob = new Blob(chunks);
+      // Build blob → trigger download
+      const blob    = new Blob(chunks);
       const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      // Determine extension from label
-      const ext = label.includes('m4a') ? 'm4a' : label.includes('webm') ? 'webm' : 'mp4';
+      const a       = document.createElement('a');
+      a.href        = blobUrl;
+      const ext     = label.includes('m4a') ? 'm4a' : label.includes('webm') ? 'webm' : 'mp4';
       const safeTitle = (this.state.video?.title || 'video')
         .replace(/[^\w\s\-]/g, '').trim().replace(/\s+/g, '_').slice(0, 60);
       a.download = `${safeTitle}.${ext}`;
@@ -175,28 +224,32 @@ const DownloadView = {
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
 
-      // Success
-      overlayBar.style.width = '100%';
+      // Success state
+      overlayBar.style.width    = '100%';
       overlayBar.style.background = 'var(--done-text)';
-      overlayMsg.textContent = 'Download selesai! ✓';
+      overlayMsg.textContent    = 'Download selesai! ✓';
+      overlayPct.textContent    = '100%';
+      overlaySpeed.textContent  = '';
+      overlayEta.textContent    = '';
       overlayDetail.textContent = a.download;
       setTimeout(() => overlay.classList.remove('active'), 2000);
 
     } catch (err) {
       if (err.name === 'AbortError') return;
-      // Show error in overlay
-      overlayBar.style.width = '100%';
+      overlayBar.style.width      = '100%';
       overlayBar.style.background = 'var(--error-text)';
-      overlayMsg.textContent = 'Gagal mengunduh';
-      overlayDetail.textContent = err.message + ' — Coba format lain atau coba lagi.';
-      overlayCancel.textContent = 'Tutup';
+      overlayMsg.textContent      = 'Gagal mengunduh';
+      overlaySpeed.textContent    = '';
+      overlayEta.textContent      = '';
+      overlayDetail.textContent   = err.message;
+      overlayCancel.textContent   = 'Tutup';
     }
   },
 
   _fmtCell(f) {
     const resMatch = (f.label || '').match(/\((\d+p)\)/i);
-    const quality = resMatch ? resMatch[1] : (f.type === 'audio' ? f.ext.toUpperCase() : f.label);
-    const sub = f.type === 'audio' ? 'Audio' : 'MP4';
+    const quality  = resMatch ? resMatch[1] : (f.type === 'audio' ? f.ext.toUpperCase() : f.label);
+    const sub      = f.type === 'audio' ? 'Audio' : 'MP4';
     return `<button class="format-cell" data-id="${f.formatId}" data-url="${this._attr(f.url)}" data-label="${this._attr(f.label)}">
       <span class="format-cell__q">${this._esc(quality)}</span>
       <span class="format-cell__sub">${this._esc(sub)}</span>

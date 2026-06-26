@@ -113,9 +113,10 @@ i.ti{font-size:16px;line-height:1}
 }
 
 .sidebar__hamburger{
-  display:none;position:absolute;top:16px;right:-14px;
-  width:28px;height:28px;border-radius:6px;background:var(--bg-card);
+  display:none;
+  width:32px;height:32px;border-radius:6px;background:var(--bg-active);
   border:0.5px solid var(--border);align-items:center;justify-content:center;
+  flex-shrink:0;
 }
 
 /* ========================================================================
@@ -316,16 +317,23 @@ i.ti{font-size:16px;line-height:1}
   border-radius:var(--radius-card);padding:28px 36px;
   text-align:center;min-width:300px;
 }
-.dl-overlay__icon{font-size:32px;color:var(--text-sec);margin-bottom:12px;display:block}
-.dl-overlay__msg{font-size:13px;font-weight:500;margin-bottom:14px}
+.dl-overlay__icon{font-size:28px;color:var(--text-sec);margin-bottom:10px;display:block}
+.dl-overlay__msg{font-size:13px;font-weight:500;margin-bottom:4px}
+.dl-overlay__detail{font-size:11px;color:var(--text-muted);margin-bottom:12px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;}
 .dl-overlay__bar{
-  height:4px;background:var(--bg-active);border-radius:3px;overflow:hidden;margin-bottom:10px;
+  height:4px;background:var(--bg-active);border-radius:3px;overflow:hidden;margin-bottom:8px;
 }
 .dl-overlay__fill{
-  height:100%;background:#5a6070;border-radius:3px;width:0%;
-  transition:width .3s;
+  height:100%;background:#5a6070;border-radius:3px;width:0%;transition:width .4s;
 }
-.dl-overlay__detail{font-size:11px;color:var(--text-muted)}
+.dl-overlay__stats{
+  display:flex;justify-content:space-between;font-size:12px;font-weight:500;
+  color:var(--text);margin-bottom:2px;
+}
+.dl-overlay__stats--sub{
+  font-size:11px;font-weight:400;color:var(--text-muted);margin-bottom:12px;
+}
 
 .dl-overlay__cancel{
   margin-top:12px;font-size:11px;color:var(--text-muted);padding:6px 16px;
@@ -421,7 +429,10 @@ i.ti{font-size:16px;line-height:1}
     transform:translateX(-100%);transition:transform .2s ease;
   }
   .sidebar--open{transform:translateX(0)}
+  /* Hamburger pindah ke topbar di mobile */
   .sidebar__hamburger{display:flex}
+  .topbar{gap:8px}
+  .topbar__title{flex:1}
   .topbar__btn-text{display:none}
   .topbar__actions .btn{padding:8px}
   .format-grid{grid-template-columns:repeat(2,1fr)}
