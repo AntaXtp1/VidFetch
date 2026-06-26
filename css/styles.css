@@ -331,6 +331,89 @@ i.ti{font-size:16px;line-height:1}
   margin-top:12px;font-size:11px;color:var(--text-muted);padding:6px 16px;
 }
 .dl-overlay__cancel:hover{color:var(--text)}
+
+/* ========================================================================
+   SPLASH SCREEN
+   ======================================================================== */
+.splash{
+  position:fixed;inset:0;z-index:200;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(14,16,18,.7);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  opacity:1;transition:opacity .4s ease;
+}
+.splash.hidden{opacity:0;pointer-events:none}
+.splash__box{
+  background:var(--bg-card);
+  border:0.5px solid var(--border);
+  border-radius:12px;
+  padding:28px 32px;
+  width:320px;max-width:90vw;
+  box-shadow:0 8px 40px rgba(0,0,0,.5);
+  animation:splashIn .35s ease;
+}
+@keyframes splashIn{
+  from{transform:translateY(12px);opacity:0}
+  to{transform:translateY(0);opacity:1}
+}
+.splash__logo{
+  display:flex;align-items:center;gap:12px;margin-bottom:16px;
+}
+.splash__logo-icon{
+  width:40px;height:40px;border-radius:8px;background:#3a3d42;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.splash__logo-icon i{font-size:22px}
+.splash__app-name{font-size:16px;font-weight:500}
+.splash__app-sub{font-size:11px;color:var(--text-muted)}
+.splash__desc{
+  font-size:12px;color:var(--text-sec);line-height:1.6;
+  margin-bottom:16px;padding-bottom:16px;
+  border-bottom:0.5px solid var(--border);
+}
+.splash__pwa{
+  display:flex;align-items:center;gap:8px;
+  font-size:11px;color:var(--done-text);
+  background:var(--done-bg);border:0.5px solid var(--done-border);
+  border-radius:6px;padding:8px 10px;margin-bottom:16px;
+}
+.splash__pwa i{font-size:14px;flex-shrink:0}
+.splash__timer{
+  height:3px;background:var(--bg-active);
+  border-radius:3px;overflow:hidden;margin-bottom:14px;
+}
+.splash__timer-bar{
+  height:100%;background:#5a6070;border-radius:3px;
+  width:100%;
+  transition:width 3s linear;
+}
+.splash__timer-bar.running{width:0%}
+.splash__skip{
+  width:100%;padding:10px;border-radius:6px;
+  background:var(--bg-active);border:0.5px solid var(--border-hover);
+  font-size:13px;font-weight:500;color:var(--text);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:background .12s;
+}
+.splash__skip:hover{background:#2d323a}
+
+/* ========================================================================
+   PWA INSTALL BUTTON (sidebar)
+   ======================================================================== */
+.sidebar__install{
+  padding:10px 14px;border-top:0.5px solid var(--border);
+}
+.btn--install{
+  width:100%;padding:9px 12px;border-radius:6px;
+  background:var(--done-bg);border:0.5px solid var(--done-border);
+  color:var(--done-text);font-size:12px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:background .12s;cursor:pointer;
+}
+.btn--install:hover{background:#253525}
+
+/* ========================================================================
+   MOBILE RESPONSIVE
    ======================================================================== */
 @media (max-width:760px){
   .sidebar{

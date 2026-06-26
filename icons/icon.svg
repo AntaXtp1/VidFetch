@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="32" fill="#17191c"/>
+  <rect x="16" y="16" width="160" height="160" rx="24" fill="#252930"/>
+  <!-- YouTube-style play button -->
+  <rect x="36" y="56" width="120" height="80" rx="12" fill="#38404a"/>
+  <polygon points="76,72 76,120 128,96" fill="#d0d5de"/>
+  <!-- VidFetch text hint bar -->
+  <rect x="36" y="148" width="80" height="6" rx="3" fill="#4a505a"/>
+  <rect x="124" y="148" width="32" height="6" rx="3" fill="#5a6070"/>
+</svg>
