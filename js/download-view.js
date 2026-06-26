@@ -195,6 +195,17 @@ const DownloadView = {
 
     try {
       const res = await fetch(proxyUrl, { signal: controller.signal });
+
+      // Cek kalau URL expired / IP-bound
+      if (res.status === 403 || res.status === 401) {
+        let errMsg = 'URL expired. Klik Fetch ulang untuk refresh URL, lalu coba download lagi.';
+        try {
+          const json = await res.json();
+          if (json.error === 'URL_EXPIRED_OR_BOUND') errMsg = json.message;
+        } catch {}
+        throw new Error(errMsg);
+      }
+
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
       const contentLength = parseInt(res.headers.get('content-length') || '0', 10);
